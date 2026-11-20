@@ -3,70 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NiftyPulse AI v5.0 | Quant & MLOps Terminal</title>
+<title>NiftyPulse AI v6.0 | NSE & BSE Quant Terminal</title>
 <style>
-  :root { --bg:#090c12; --card:#121722; --card2:#192130; --border:#222d40; --green:#00d09c; --red:#eb5b3c; --text:#f8fafc; --muted:#8b9bb4; --blue:#38bdf8; }
+  :root { --bg:#080b10; --card:#111621; --card2:#182030; --border:#212c3f; --green:#00d09c; --red:#eb5b3c; --text:#f8fafc; --muted:#8b9bb4; --blue:#38bdf8; --gold:#f59e0b; }
   * { box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
   body { background:var(--bg); color:var(--text); margin:0; padding:0 0 78px; display:flex; justify-content:center; }
   .shell { max-width:480px; width:100%; padding:10px 12px; }
-  #lock-screen { position:fixed; inset:0; background:#070a0f; z-index:999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
+  #lock-screen { position:fixed; inset:0; background:#06080c; z-index:999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
   .pin-dots { display:flex; gap:14px; margin:18px 0; }
   .dot { width:13px; height:13px; border-radius:50%; border:2px solid var(--green); }
   .dot.filled { background:var(--green); }
   .keypad { display:grid; grid-template-columns:repeat(3,70px); gap:14px; margin-top:8px; }
   .key { height:58px; border-radius:50%; background:var(--card); border:1px solid var(--border); color:#fff; font-size:1.25rem; font-weight:700; cursor:pointer; }
   .key:active { background:var(--green); color:#000; }
+  #alert-toast { position:fixed; top:12px; left:50%; transform:translateX(-50%); background:#064e3b; border:1px solid var(--green); color:#fff; padding:10px 16px; border-radius:12px; z-index:950; font-size:0.82rem; font-weight:700; display:none; box-shadow:0 10px 25px rgba(0,0,0,0.7); }
   .idx-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none; }
   .idx-strip::-webkit-scrollbar { display:none; }
-  .idx-pill { background:var(--card); border:1px solid var(--border); border-radius:11px; padding:7px 11px; min-width:128px; flex-shrink:0; cursor:pointer; }
-  .idx-pill:hover { border-color:var(--green); }
-  .idx-name { font-size:0.68rem; color:var(--muted); font-weight:700; }
+  .idx-pill { background:var(--card); border:1px solid var(--border); border-radius:11px; padding:7px 11px; min-width:124px; flex-shrink:0; cursor:pointer; }
+  .idx-name { font-size:0.66rem; color:var(--muted); font-weight:700; }
   .idx-num { font-size:0.84rem; font-weight:800; margin-top:2px; }
-  .idx-chg { font-size:0.7rem; font-weight:600; margin-top:1px; }
+  .idx-chg { font-size:0.69rem; font-weight:600; margin-top:1px; }
   .search-wrap { position:relative; margin-bottom:10px; }
   .search-box { display:flex; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:3px 6px; align-items:center; }
-  .search-box input { flex:1; background:transparent; border:none; color:#fff; padding:9px; font-size:0.9rem; outline:none; }
+  .search-box input { flex:1; background:transparent; border:none; color:#fff; padding:9px; font-size:0.88rem; outline:none; }
   .btn-go { background:var(--green); color:#042f24; border:none; border-radius:8px; padding:8px 13px; font-weight:700; font-size:0.82rem; cursor:pointer; }
-  .dropdown { position:absolute; top:46px; left:0; right:0; background:#151d2b; border:1px solid var(--border); border-radius:12px; z-index:85; max-height:250px; overflow-y:auto; display:none; box-shadow:0 14px 32px rgba(0,0,0,0.8); }
+  .dropdown { position:absolute; top:46px; left:0; right:0; background:#151d2b; border:1px solid var(--border); border-radius:12px; z-index:85; max-height:260px; overflow-y:auto; display:none; box-shadow:0 14px 32px rgba(0,0,0,0.85); }
   .dd-item { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
-  .dd-item:hover { background:#1f2a3d; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:15px; margin-bottom:11px; }
+  .ex-tag { font-size:0.65rem; padding:2px 6px; border-radius:5px; font-weight:800; margin-left:6px; }
+  .ex-nse { background:rgba(0,208,156,0.15); color:var(--green); }
+  .ex-bse { background:rgba(56,189,248,0.15); color:var(--blue); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:14px; margin-bottom:11px; }
   .hdr-row { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .title { font-size:1.12rem; font-weight:700; }
-  .sub { font-size:0.74rem; color:var(--muted); margin-top:2px; }
-  .price-big { font-size:1.68rem; font-weight:800; margin:6px 0 2px; }
+  .title { font-size:1.08rem; font-weight:700; }
+  .sub { font-size:0.73rem; color:var(--muted); margin-top:2px; }
+  .price-big { font-size:1.65rem; font-weight:800; margin:6px 0 2px; }
   .up { color:var(--green); } .dn { color:var(--red); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .kv { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:0.8rem; }
+  .kv:last-child { border-bottom:none; }
+  .live-dot { display:inline-block; width:7px; height:7px; background:var(--green); border-radius:50%; margin-right:5px; animation:pulse 1.4s infinite; }
+  @keyframes pulse { 0%{opacity:1;transform:scale(1)} 50%{opacity:0.3;transform:scale(1.4)} 100%{opacity:1;transform:scale(1)} }
+  .sec-tile { padding:10px; border-radius:11px; text-align:center; border:1px solid var(--border); }
+  .sec-pos { background:rgba(0,208,156,0.12); border-color:rgba(0,208,156,0.3); }
+  .sec-neg { background:rgba(235,91,60,0.12); border-color:rgba(235,91,60,0.3); }
   .chart-top { display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:6px; }
-  .crosshair-info { font-size:0.74rem; color:var(--blue); font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .zoom-btns { display:flex; gap:4px; }
-  .zbtn { background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:3px 8px; font-size:0.74rem; font-weight:700; cursor:pointer; }
-  .zbtn:active { background:var(--green); color:#000; }
-  #chart-wrap { position:relative; width:100%; height:195px; touch-action:none; margin:6px 0 8px; cursor:crosshair; }
+  .crosshair-info { font-size:0.73rem; color:var(--blue); font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .zbtn { background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:3px 8px; font-size:0.73rem; font-weight:700; cursor:pointer; }
+  #chart-wrap { position:relative; width:100%; height:190px; touch-action:none; margin:6px 0 8px; }
   canvas { width:100%; height:100%; display:block; }
   .tf-bar { display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:4px; border-radius:10px; }
   .tf-btns { display:flex; gap:1px; flex:1; justify-content:space-around; }
-  .tf { background:transparent; border:none; color:var(--muted); font-size:0.72rem; font-weight:700; padding:6px 7px; border-radius:7px; cursor:pointer; }
+  .tf { background:transparent; border:none; color:var(--muted); font-size:0.7rem; font-weight:700; padding:6px 6px; border-radius:7px; cursor:pointer; }
   .tf.active { background:var(--card2); color:var(--green); }
-  .mode-btn { background:var(--card2); border:1px solid var(--border); color:var(--green); border-radius:7px; padding:5px 8px; font-size:0.72rem; font-weight:700; cursor:pointer; margin-left:4px; }
-  .slider-block { margin:11px 0; }
-  .sl-labels { display:flex; justify-content:space-between; font-size:0.74rem; color:var(--muted); margin-bottom:3px; }
-  .sl-vals { display:flex; justify-content:space-between; font-size:0.84rem; font-weight:700; margin-bottom:6px; }
+  .mode-btn { background:var(--card2); border:1px solid var(--border); color:var(--green); border-radius:7px; padding:5px 7px; font-size:0.7rem; font-weight:700; cursor:pointer; margin-left:3px; }
+  .slider-block { margin:10px 0; }
+  .sl-labels { display:flex; justify-content:space-between; font-size:0.73rem; color:var(--muted); margin-bottom:3px; }
+  .sl-vals { display:flex; justify-content:space-between; font-size:0.83rem; font-weight:700; margin-bottom:5px; }
   .track { position:relative; height:5px; background:#263145; border-radius:4px; }
   .pointer { position:absolute; top:-4px; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:8px solid var(--text); transform:translateX(-6px); }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .kv { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:0.81rem; }
-  .kv:last-child { border-bottom:none; }
-  .bar-row { margin:9px 0; }
-  .bar-top { display:flex; justify-content:space-between; font-size:0.79rem; margin-bottom:4px; }
   .bar-bg { height:7px; background:#222b3c; border-radius:5px; overflow:hidden; }
   .bar-fill { height:100%; border-radius:5px; }
-  .sub-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:11px; gap:16px; }
-  .stab { padding:8px 2px; font-size:0.84rem; font-weight:700; color:var(--muted); border-bottom:2px solid transparent; cursor:pointer; }
+  .sub-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:11px; gap:14px; overflow-x:auto; }
+  .stab { padding:8px 2px; font-size:0.82rem; font-weight:700; color:var(--muted); border-bottom:2px solid transparent; cursor:pointer; white-space:nowrap; }
   .stab.active { color:var(--text); border-bottom-color:var(--green); }
-  .bnav { position:fixed; bottom:0; left:0; right:0; background:#10151f; border-top:1px solid var(--border); display:flex; justify-content:space-around; padding:8px 0 10px; z-index:90; }
-  .bitem { background:none; border:none; color:var(--muted); font-size:0.71rem; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+  .bnav { position:fixed; bottom:0; left:0; right:0; background:#0f141e; border-top:1px solid var(--border); display:flex; justify-content:space-around; padding:8px 0 10px; z-index:90; }
+  .bitem { background:none; border:none; color:var(--muted); font-size:0.7rem; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
   .bitem.active { color:var(--green); }
-  .bicon { font-size:1.12rem; }
+  .bicon { font-size:1.1rem; }
+  .inp-mini { width:100%; background:var(--bg); border:1px solid var(--border); color:#fff; padding:8px 10px; border-radius:8px; font-size:0.85rem; outline:none; }
   .switch { position:relative; display:inline-block; width:46px; height:24px; }
   .switch input { opacity:0; width:0; height:0; }
   .slider-tog { position:absolute; cursor:pointer; inset:0; background:#334155; border-radius:24px; transition:.3s; }
@@ -76,6 +81,7 @@
 </style>
 </head>
 <body>
+<div id="alert-toast"></div>
 <div id="lock-screen">
   <div style="font-size:2rem;">🔒</div>
   <div style="font-weight:700; font-size:1.1rem; margin-top:8px;">NiftyPulse AI Locked</div>
@@ -91,173 +97,256 @@
 
 <div class="shell">
   <div class="idx-strip" id="idx-strip">
-    <div class="idx-pill"><div class="idx-name">SYNCING INDICES...</div><div class="idx-num">NSE Live</div></div>
+    <div class="idx-pill"><div class="idx-name">SYNCING NSE & BSE...</div><div class="idx-num">Live Feed</div></div>
   </div>
 
-  <div id="tab-analyzer">
-    <div class="search-wrap">
-      <div class="search-box">
-        <input type="text" id="q" placeholder="Search ANY NSE stock (MRF, BEL, Trent, Cupid...)" oninput="liveSearch()" onfocus="liveSearch()">
-        <button class="btn-go" onclick="loadStock(document.getElementById('q').value)">Go</button>
+  <div class="search-wrap">
+    <div class="search-box">
+      <input type="text" id="q" placeholder="Search NSE & BSE stocks (Cupid, HAL, BSE, MRF...)" oninput="liveSearch()" onfocus="liveSearch()">
+      <button class="btn-go" onclick="openStock(document.getElementById('q').value)">Go</button>
+    </div>
+    <div class="dropdown" id="dd"></div>
+  </div>
+
+  <div id="tab-explore">
+    <div id="home-view">
+      <div class="card">
+        <div class="hdr-row" style="margin-bottom:10px;">
+          <div><div class="title">🚀 AI Bullish Breakout Picks</div><div class="sub">Highest Ensemble ML UP-Probability Today</div></div>
+          <span style="font-size:0.7rem; color:var(--green); font-weight:700;"><span class="live-dot"></span>LIVE</span>
+        </div>
+        <div id="ai-picks-list"><div class="sub">Running Ensemble Quant Scan...</div></div>
       </div>
-      <div class="dropdown" id="dd"></div>
+
+      <div class="card">
+        <div class="title" style="margin-bottom:10px;">📊 NSE Sector Heatmap</div>
+        <div class="grid3" id="sector-grid"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div style="font-weight:700; font-size:0.9rem; margin-bottom:8px;" class="up">▲ Top Gainers</div>
+          <div id="gainers-list"></div>
+        </div>
+        <div class="card">
+          <div style="font-weight:700; font-size:0.9rem; margin-bottom:8px;" class="dn">▼ Top Losers</div>
+          <div id="losers-list"></div>
+        </div>
+      </div>
     </div>
 
-    <div id="loader" style="text-align:center; padding:26px; color:var(--green); font-size:0.88rem; display:none;">⚡ Fetching NSE Data & Quant Signals...</div>
-
-    <div id="stock-body" style="display:none;">
-      <div class="card">
-        <div class="hdr-row">
-          <div><div class="title" id="s-name"></div><div class="sub" id="s-sym"></div></div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <span id="lat-pill" style="font-size:0.68rem; color:var(--blue); background:rgba(56,189,248,0.12); padding:4px 7px; border-radius:6px; font-weight:700;"></span>
-            <button onclick="toggleWatch()" id="w-btn" style="background:var(--card2); border:1px solid var(--border); color:var(--green); padding:6px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;">+ Watch</button>
-          </div>
-        </div>
-        <div class="price-big" id="s-price"></div>
-        <div style="font-size:0.83rem; font-weight:600;" id="s-chg"></div>
-        <div class="chart-top">
-          <div class="crosshair-info" id="xhair">Pinch or use +/- to zoom • Drag to inspect</div>
-          <div class="zoom-btns">
-            <button class="zbtn" onclick="zoomChart(0.7)">+</button>
-            <button class="zbtn" onclick="zoomChart(1.4)">−</button>
-            <button class="zbtn" onclick="resetZoom()">Reset</button>
-          </div>
-        </div>
-        <div id="chart-wrap"><canvas id="chart"></canvas></div>
-        <div class="tf-bar">
-          <div class="tf-btns">
-            <button class="tf" onclick="setTF('1wk',this)">1W</button>
-            <button class="tf" onclick="setTF('1mo',this)">1M</button>
-            <button class="tf" onclick="setTF('3mo',this)">3M</button>
-            <button class="tf" onclick="setTF('6mo',this)">6M</button>
-            <button class="tf active" onclick="setTF('1y',this)">1Y</button>
-            <button class="tf" onclick="setTF('5y',this)">5Y</button>
-            <button class="tf" onclick="setTF('max',this)">ALL</button>
-          </div>
-          <button class="mode-btn" id="mode-btn" onclick="toggleChartMode()">🕯️ Candle</button>
+    <div id="detail-view" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <button onclick="backToHome()" style="background:var(--card); border:1px solid var(--border); color:var(--text); padding:6px 12px; border-radius:9px; font-size:0.8rem; font-weight:700; cursor:pointer;">← Market Home</button>
+        <div style="display:flex; gap:6px;">
+          <button onclick="setTargetAlert()" style="background:var(--card); border:1px solid var(--border); color:var(--gold); padding:6px 10px; border-radius:9px; font-size:0.76rem; font-weight:700; cursor:pointer;">🔔 Alert</button>
+          <button onclick="shareQuantCard()" style="background:var(--card); border:1px solid var(--border); color:var(--blue); padding:6px 10px; border-radius:9px; font-size:0.76rem; font-weight:700; cursor:pointer;">📤 Share</button>
+          <button onclick="toggleWatch()" id="w-btn" style="background:var(--card2); border:1px solid var(--border); color:var(--green); padding:6px 10px; border-radius:9px; font-size:0.76rem; font-weight:700; cursor:pointer;">+ Watch</button>
         </div>
       </div>
 
-      <div class="sub-tabs">
-        <div class="stab active" onclick="switchSub('ov',this)">Overview</div>
-        <div class="stab" onclick="switchSub('ai',this)">AI Quant & Tech</div>
-        <div class="stab" onclick="switchSub('sh',this)">Shareholding</div>
-      </div>
+      <div id="loader" style="text-align:center; padding:26px; color:var(--green); font-size:0.86rem; display:none;">⚡ Syncing Live Market & Quant Engine...</div>
 
-      <div id="sub-ov">
+      <div id="stock-body">
         <div class="card">
-          <div style="font-weight:700; font-size:0.94rem; margin-bottom:8px;">Performance</div>
-          <div class="slider-block">
-            <div class="sl-labels"><span>Today's Low</span><span>Today's High</span></div>
-            <div class="sl-vals"><span id="t-low"></span><span id="t-high"></span></div>
-            <div class="track"><div class="pointer" id="t-ptr"></div></div>
-          </div>
-          <div class="slider-block">
-            <div class="sl-labels"><span>52 Week Low</span><span>52 Week High</span></div>
-            <div class="sl-vals"><span id="w-low"></span><span id="w-high"></span></div>
-            <div class="track"><div class="pointer" id="w-ptr"></div></div>
-          </div>
-          <div class="grid2" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
-            <div class="kv"><span style="color:var(--muted);">Open</span><strong id="f-open"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">Prev. Close</span><strong id="f-prev"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">Volume</span><strong id="f-vol"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">20-DMA</span><strong id="f-sma"></strong></div>
-          </div>
-        </div>
-        <div class="card">
-          <div style="font-weight:700; font-size:0.94rem; margin-bottom:6px;">Fundamentals</div>
-          <div class="grid2">
-            <div class="kv"><span style="color:var(--muted);">Mkt Cap</span><strong id="fn-cap"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">ROE</span><strong id="fn-roe"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">P/E Ratio</span><strong id="fn-pe"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">EPS (TTM)</span><strong id="fn-eps"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">P/B Ratio</span><strong id="fn-pb"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">Div Yield</span><strong id="fn-div"></strong></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="sub-ai" style="display:none;">
-        <div class="card" style="border-color:rgba(0,208,156,0.35);">
           <div class="hdr-row">
-            <div><div style="font-weight:700; color:var(--blue); font-size:0.95rem;">🤖 Ensemble ML & Technical Setup</div><div class="sub">RF + GradientBoost + Logistic Voting</div></div>
-            <span id="ai-badge" style="padding:4px 10px; border-radius:8px; font-weight:700; font-size:0.78rem;"></span>
+            <div><div class="title" id="s-name"></div><div class="sub" id="s-sym"></div></div>
+            <div style="text-align:right;">
+              <span style="font-size:0.7rem; color:var(--green); font-weight:700;"><span class="live-dot"></span>AUTO-TICK</span>
+              <div id="exch-switch" style="margin-top:4px;"></div>
+            </div>
           </div>
-          <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-top:12px;">
-            <span style="color:var(--muted);">Next-Day Bullish Probability</span><strong id="ai-prob"></strong>
-          </div>
-          <div class="bar-bg" style="margin:6px 0 14px;"><div class="bar-fill" id="ai-bar"></div></div>
-          <div class="grid2">
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Stop-Loss (Support)</div><div class="dn" style="font-weight:700; margin-top:3px;" id="ai-sup"></div></div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Target (Resistance)</div><div class="up" style="font-weight:700; margin-top:3px;" id="ai-res"></div></div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">14-Day RSI</div><div style="font-weight:700; margin-top:3px;" id="ai-rsi"></div></div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">MACD Momentum</div><div style="font-weight:700; margin-top:3px;" id="ai-macd"></div></div>
-          </div>
-        </div>
-      </div>
+          <div class="price-big" id="s-price"></div>
+          <div style="font-size:0.83rem; font-weight:600;" id="s-chg"></div>
 
-      <div id="sub-sh" style="display:none;">
-        <div class="card">
-          <div style="font-weight:700; font-size:0.94rem; margin-bottom:10px;">Shareholding Pattern</div>
-          <div class="bar-row"><div class="bar-top"><span>Promoters</span><strong id="sh-prom"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-prom" style="background:#818cf8;"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>FIIs (Foreign Inst.)</span><strong id="sh-fii"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-fii" style="background:#38bdf8;"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>DIIs (Mutual Funds)</span><strong id="sh-dii"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-dii" style="background:#00d09c;"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>Retail & Public</span><strong id="sh-pub"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-pub" style="background:#fb923c;"></div></div></div>
+          <div class="chart-top">
+            <div class="crosshair-info" id="xhair">Pinch or +/- to zoom • Drag to inspect</div>
+            <div style="display:flex; gap:4px;">
+              <button class="zbtn" onclick="zoomChart(0.7)">+</button>
+              <button class="zbtn" onclick="zoomChart(1.4)">−</button>
+              <button class="zbtn" onclick="resetZoom()">Reset</button>
+            </div>
+          </div>
+          <div id="chart-wrap"><canvas id="chart"></canvas></div>
+
+          <div class="tf-bar">
+            <div class="tf-btns">
+              <button class="tf" onclick="setTF('1d',this)">1D</button>
+              <button class="tf" onclick="setTF('1wk',this)">1W</button>
+              <button class="tf" onclick="setTF('1mo',this)">1M</button>
+              <button class="tf" onclick="setTF('3mo',this)">3M</button>
+              <button class="tf active" onclick="setTF('1y',this)">1Y</button>
+              <button class="tf" onclick="setTF('5y',this)">5Y</button>
+              <button class="tf" onclick="setTF('max',this)">ALL</button>
+            </div>
+            <button class="mode-btn" id="mode-btn" onclick="toggleChartMode()">🕯️ Candle</button>
+          </div>
+        </div>
+
+        <div class="sub-tabs">
+          <div class="stab active" onclick="switchSub('ov',this)">Overview</div>
+          <div class="stab" onclick="switchSub('ai',this)">AI Quant & Tools</div>
+          <div class="stab" onclick="switchSub('nw',this)">News Sentiment</div>
+        </div>
+
+        <div id="sub-ov">
+          <div class="card">
+            <div style="font-weight:700; font-size:0.92rem; margin-bottom:8px;">Performance</div>
+            <div class="slider-block">
+              <div class="sl-labels"><span>Today's Low</span><span>Today's High</span></div>
+              <div class="sl-vals"><span id="t-low"></span><span id="t-high"></span></div>
+              <div class="track"><div class="pointer" id="t-ptr"></div></div>
+            </div>
+            <div class="slider-block">
+              <div class="sl-labels"><span>52 Week Low</span><span>52 Week High</span></div>
+              <div class="sl-vals"><span id="w-low"></span><span id="w-high"></span></div>
+              <div class="track"><div class="pointer" id="w-ptr"></div></div>
+            </div>
+            <div class="grid2" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
+              <div class="kv"><span style="color:var(--muted);">Open</span><strong id="f-open"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">Prev. Close</span><strong id="f-prev"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">Volume</span><strong id="f-vol"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">20-DMA</span><strong id="f-sma"></strong></div>
+            </div>
+          </div>
+          <div class="card">
+            <div style="font-weight:700; font-size:0.92rem; margin-bottom:6px;">Fundamentals</div>
+            <div class="grid2">
+              <div class="kv"><span style="color:var(--muted);">Mkt Cap</span><strong id="fn-cap"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">ROE</span><strong id="fn-roe"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">P/E Ratio</span><strong id="fn-pe"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">EPS (TTM)</span><strong id="fn-eps"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">P/B Ratio</span><strong id="fn-pb"></strong></div>
+              <div class="kv"><span style="color:var(--muted);">Div Yield</span><strong id="fn-div"></strong></div>
+            </div>
+          </div>
+        </div>
+                <div id="sub-ai" style="display:none;">
+          <div class="card" style="border-color:rgba(0,208,156,0.35);">
+            <div class="hdr-row">
+              <div><div style="font-weight:700; color:var(--blue); font-size:0.94rem;">🤖 Ensemble ML Forecast</div><div class="sub">RF + GradientBoost + Logistic Voting</div></div>
+              <span id="ai-badge" style="padding:4px 10px; border-radius:8px; font-weight:700; font-size:0.76rem;"></span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-top:12px;">
+              <span style="color:var(--muted);">Next-Day Bullish Probability</span><strong id="ai-prob"></strong>
+            </div>
+            <div class="bar-bg" style="margin:6px 0 14px;"><div class="bar-fill" id="ai-bar"></div></div>
+            <div class="grid2">
+              <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Stop-Loss (Support)</div><div class="dn" style="font-weight:700; margin-top:3px;" id="ai-sup"></div></div>
+              <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Target (Resistance)</div><div class="up" style="font-weight:700; margin-top:3px;" id="ai-res"></div></div>
+              <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">14-Day RSI</div><div style="font-weight:700; margin-top:3px;" id="ai-rsi"></div></div>
+              <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">MACD Signal</div><div style="font-weight:700; margin-top:3px;" id="ai-macd"></div></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:700; font-size:0.92rem; margin-bottom:8px;">🎯 AI Position Size & Risk Calculator</div>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+              <input type="number" id="cap-inp" class="inp-mini" value="10000" oninput="calcPosition()">
+              <span class="sub" style="white-space:nowrap;">Capital (₹)</span>
+            </div>
+            <div id="pos-out" class="sub" style="line-height:1.5;"></div>
+          </div>
+
+          <div class="card">
+            <div style="font-weight:700; font-size:0.92rem; margin-bottom:8px;">💰 3-Year Monthly SIP Projector</div>
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+              <input type="number" id="sip-inp" class="inp-mini" value="5000" oninput="calcSip()">
+              <span class="sub" style="white-space:nowrap;">₹ / Month</span>
+            </div>
+            <div id="sip-out" class="sub" style="line-height:1.5;"></div>
+          </div>
+        </div>
+
+        <div id="sub-nw" style="display:none;">
+          <div class="card">
+            <div class="hdr-row" style="margin-bottom:10px;">
+              <div style="font-weight:700; font-size:0.94rem;">📰 AI News Sentiment Feed</div>
+              <span id="news-overall" style="font-size:0.74rem; font-weight:700; padding:3px 8px; border-radius:6px;"></span>
+            </div>
+            <div id="news-list"></div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div id="tab-compare" style="display:none;">
+    <div class="card">
+      <div class="title" style="margin-bottom:4px;">⚔️ Head-to-Head AI Stock Battle</div>
+      <div class="sub" style="margin-bottom:12px;">Compare any two NSE/BSE stocks with Ensemble ML</div>
+      <div class="grid2" style="margin-bottom:10px;">
+        <input type="text" id="cmp-a" class="inp-mini" value="HAL.NS" placeholder="Stock 1 (e.g. HAL.NS)">
+        <input type="text" id="cmp-b" class="inp-mini" value="BEL.NS" placeholder="Stock 2 (e.g. BEL.NS)">
+      </div>
+      <button onclick="runCompare()" class="btn-go" style="width:100%; padding:10px;">Compare with AI</button>
+      <div id="cmp-res" style="margin-top:14px;"></div>
     </div>
   </div>
 
   <div id="tab-watchlist" style="display:none;">
-    <div class="card"><div class="hdr-row" style="margin-bottom:10px;"><div class="title">My Watchlist</div><span class="sub" id="wl-count"></span></div><div id="wl-list"></div></div>
+    <div class="card">
+      <div class="hdr-row" style="margin-bottom:10px;">
+        <div class="title">My NSE & BSE Watchlist</div>
+        <span class="sub" id="wl-count"></span>
+      </div>
+      <div id="wl-list"></div>
+    </div>
   </div>
 
   <div id="tab-mlops" style="display:none;">
     <div class="card" style="border-color:rgba(56,189,248,0.35);">
       <div class="title" style="color:var(--blue);">⚙️ Production MLOps Engine</div>
-      <div class="sub">Ensemble Model Registry, Cache & Latency Telemetry</div>
+      <div class="sub" id="m-meta">Ensemble Model Registry & Drift Monitor</div>
       <div class="grid2" style="margin-top:12px;">
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Ensemble Accuracy</div><div class="up" style="font-weight:800; font-size:1.1rem;" id="m-ens"></div></div>
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Cache Hit Speed</div><div class="up" style="font-weight:800; font-size:1.1rem;" id="m-hits"></div></div>
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Total API Requests</div><div style="font-weight:800; font-size:1.1rem;" id="m-reqs"></div></div>
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Avg Latency</div><div class="up" style="font-weight:800; font-size:1.1rem;" id="m-lat"></div></div>
+        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Ensemble Accuracy</div><div class="up" style="font-weight:800; font-size:1.05rem;" id="m-ens"></div></div>
+        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Data Drift Status</div><div class="up" style="font-weight:800; font-size:0.88rem;" id="m-drift"></div></div>
+        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Cache Hits / Reqs</div><div style="font-weight:800; font-size:1.05rem;" id="m-reqs"></div></div>
+        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Avg Latency</div><div class="up" style="font-weight:800; font-size:1.05rem;" id="m-lat"></div></div>
       </div>
     </div>
-    <div class="card"><div style="font-weight:700; font-size:0.94rem; margin-bottom:10px;">RandomForest Feature Importance (%)</div><div id="fi-bars"></div></div>
-  </div>
 
-  <div id="tab-settings" style="display:none;">
     <div class="card">
-      <div class="title" style="margin-bottom:4px;">Security & App Lock</div>
-      <div class="sub" style="margin-bottom:16px;">Toggle startup PIN / Biometric lock anytime</div>
-      <div class="kv" style="align-items:center; padding:12px 0;">
-        <div><div style="font-weight:700; font-size:0.9rem;">Enable App Lock</div><div class="sub">Require PIN on startup</div></div>
+      <div style="font-weight:700; font-size:0.94rem; margin-bottom:4px;">🧪 Interactive "What-If" ML Simulator</div>
+      <div class="sub" style="margin-bottom:12px;">Test how live market changes shift AI probability</div>
+      <div style="font-size:0.78rem; margin-bottom:8px;">1-Day Return: <strong id="w-r1-v">+1.5%</strong>
+        <input type="range" id="w-r1" min="-5" max="8" step="0.5" value="1.5" style="width:100%;" oninput="runWhatIf()">
+      </div>
+      <div style="font-size:0.78rem; margin-bottom:10px;">Volume Spike Ratio: <strong id="w-vr-v">1.5x</strong>
+        <input type="range" id="w-vr" min="0.5" max="4" step="0.1" value="1.5" style="width:100%;" oninput="runWhatIf()">
+      </div>
+      <div id="whatif-out" style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border); text-align:center; font-weight:700;"></div>
+    </div>
+
+    <div class="card">
+      <div class="title" style="margin-bottom:4px;">🔒 Security & App Lock</div>
+      <div class="kv" style="align-items:center; padding:10px 0;">
+        <div><div style="font-weight:700; font-size:0.88rem;">Enable Startup PIN Lock</div><div class="sub">Protect terminal on open</div></div>
         <label class="switch"><input type="checkbox" id="lock-toggle" onchange="toggleLockSetting()"><span class="slider-tog"></span></label>
       </div>
-      <div class="kv" style="align-items:center; padding:12px 0;">
-        <div><div style="font-weight:700; font-size:0.9rem;">Change 4-Digit PIN</div><div class="sub">Default PIN: 1234</div></div>
-        <button onclick="changePin()" style="background:var(--card2); border:1px solid var(--border); color:var(--green); padding:7px 12px; border-radius:8px; font-weight:700; cursor:pointer;">Set PIN</button>
-      </div>
-      <div class="kv" style="align-items:center; padding:12px 0;">
-        <div><div style="font-weight:700; font-size:0.9rem;">Test Lock Screen</div><div class="sub">Preview lock overlay</div></div>
-        <button onclick="showLock()" style="background:var(--green); border:none; color:#000; padding:7px 12px; border-radius:8px; font-weight:700; cursor:pointer;">Lock Now</button>
+      <div class="kv" style="align-items:center; padding:10px 0;">
+        <div><div style="font-weight:700; font-size:0.88rem;">Change PIN (Default: 1234)</div></div>
+        <div style="display:flex; gap:6px;">
+          <button onclick="changePin()" style="background:var(--card2); border:1px solid var(--border); color:var(--green); padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer;">Set PIN</button>
+          <button onclick="showLock()" style="background:var(--green); border:none; color:#000; padding:6px 10px; border-radius:8px; font-weight:700; cursor:pointer;">Lock</button>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
 <div class="bnav">
-  <button class="bitem active" onclick="switchTab('analyzer',this)"><span class="bicon">📈</span>Analyzer</button>
-  <button class="bitem" onclick="switchTab('watchlist',this)"><span class="bicon">🔖</span>Watchlist</button>
-  <button class="bitem" onclick="switchTab('mlops',this)"><span class="bicon">🤖</span>MLOps Lab</button>
-  <button class="bitem" onclick="switchTab('settings',this)"><span class="bicon">⚙️</span>Settings</button>
+  <button class="bitem active" id="nav-explore" onclick="switchTab('explore')"><span class="bicon">📊</span>Explore</button>
+  <button class="bitem" id="nav-compare" onclick="switchTab('compare')"><span class="bicon">⚔️</span>Compare</button>
+  <button class="bitem" id="nav-watchlist" onclick="switchTab('watchlist')"><span class="bicon">🔖</span>Watchlist</button>
+  <button class="bitem" id="nav-mlops" onclick="switchTab('mlops')"><span class="bicon">🤖</span>MLOps & Lock</button>
 </div>
 
 <script>
-let POPULAR = [], currentSym = "CUPID.NS", currentPeriod = "1y", chartData = [], chartMode = "line";
-let viewStart = 0, viewEnd = 0, pinchDist = 0;
-let watchlist = JSON.parse(localStorage.getItem("np_wl") || '["CUPID.NS","HDFCBANK.NS","HAL.NS","SBIN.NS","RELIANCE.NS"]');
+let currentTab = "explore", currentSym = "", currentPeriod = "1y", chartData = [], chartMode = "line";
+let viewStart = 0, viewEnd = 0, pinchDist = 0, liveTimer = null, lastStockData = null;
+let watchlist = JSON.parse(localStorage.getItem("np_wl") || '["CUPID.NS","HDFCBANK.NS","HAL.NS","SBIN.NS","BSE.NS"]');
+let alerts = JSON.parse(localStorage.getItem("np_alerts") || '{}');
 let enteredPin = "", searchTimer = null;
 
 function initLock() {
@@ -283,60 +372,115 @@ function toggleLockSetting() {
 }
 function changePin() {
   const p = prompt("Enter new 4-digit PIN:");
-  if (p && /^\d{4}$/.test(p)) { localStorage.setItem("np_pin", p); alert("✅ PIN saved!"); }
+  if (p && /^\d{4}$/.test(p)) { localStorage.setItem("np_pin", p); alert("✅ PIN updated!"); }
 }
 initLock();
 
-fetch('/indices').then(r=>r.json()).then(list=>{
-  document.getElementById('idx-strip').innerHTML = list.map(i => `
-    <div class="idx-pill" onclick="loadStock('${i.sym}')">
-      <div class="idx-name">${i.name}</div>
-      <div class="idx-num">${i.price}</div>
-      <div class="idx-chg ${i.chg>=0?'up':'dn'}">${i.chg>=0?'+':''}${i.chg} (${i.pct}%)</div>
-    </div>
-  `).join('');
-});
+function saveState() {
+  const params = new URLSearchParams();
+  params.set("tab", currentTab);
+  if (currentSym) params.set("stock", currentSym);
+  params.set("tf", currentPeriod);
+  history.replaceState(null, "", "#" + params.toString());
+}
+function restoreState() {
+  const hash = new URLSearchParams(location.hash.replace("#", ""));
+  const tab = hash.get("tab") || "explore";
+  const stock = hash.get("stock") || "";
+  const tf = hash.get("tf") || "1y";
+  currentPeriod = tf;
+  document.querySelectorAll('.tf').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase() === tf));
+  switchTab(tab, false);
+  if (tab === "explore" && stock) openStock(stock, false);
+}
 
-fetch('/popular').then(r=>r.json()).then(d=>{ POPULAR = d; loadStock("CUPID.NS"); });
-
-function switchTab(t, btn) {
-  ["analyzer","watchlist","mlops","settings"].forEach(x => document.getElementById("tab-"+x).style.display = (x===t?"block":"none"));
+function switchTab(t, persist = true) {
+  currentTab = t;
+  ["explore","compare","watchlist","mlops"].forEach(x => document.getElementById("tab-"+x).style.display = (x===t?"block":"none"));
   document.querySelectorAll(".bitem").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+  document.getElementById("nav-"+t).classList.add("active");
   if (t === "watchlist") renderWatchlist();
-  if (t === "mlops") loadMlops();
+  if (t === "mlops") { loadMlops(); runWhatIf(); }
+  if (persist) saveState();
 }
-function switchSub(s, el) {
-  ["ov","ai","sh"].forEach(x => document.getElementById("sub-"+x).style.display = (x===s?"block":"none"));
-  document.querySelectorAll(".stab").forEach(b => b.classList.remove("active"));
-  el.classList.add("active");
+
+function refreshIndices() {
+  fetch('/indices').then(r=>r.json()).then(list=>{
+    if (!list.length) return;
+    document.getElementById('idx-strip').innerHTML = list.map(i => `
+      <div class="idx-pill" onclick="openStock('${i.sym}')">
+        <div class="idx-name">${i.name}</div>
+        <div class="idx-num">${i.price}</div>
+        <div class="idx-chg ${i.chg>=0?'up':'dn'}">${i.chg>=0?'+':''}${i.chg} (${i.pct}%)</div>
+      </div>
+    `).join('');
+  });
 }
+refreshIndices();
+
+function loadMarketHome() {
+  fetch('/market-home').then(r=>r.json()).then(d=>{
+    document.getElementById('ai-picks-list').innerHTML = (d.ai_picks || []).map(s => `
+      <div class="kv" style="padding:10px 0; cursor:pointer;" onclick="openStock('${s.sym}')">
+        <div><strong>${s.name}</strong> <span class="ex-tag ex-nse">NSE</span><div class="sub">${s.sector} • Bullish Prob: <span class="up">${s.prob}%</span></div></div>
+        <div style="text-align:right;"><strong>₹${s.price}</strong><div class="${s.chg>=0?'up':'dn'}" style="font-size:0.75rem;">${s.chg>=0?'+':''}${s.pct}%</div></div>
+      </div>
+    `).join('');
+    document.getElementById('sector-grid').innerHTML = (d.sectors || []).map(sec => `
+      <div class="sec-tile ${sec.pct>=0?'sec-pos':'sec-neg'}">
+        <div style="font-size:0.75rem; font-weight:700;">${sec.sector}</div>
+        <div class="${sec.pct>=0?'up':'dn'}" style="font-size:0.84rem; font-weight:800; margin-top:3px;">${sec.pct>=0?'+':''}${sec.pct}%</div>
+      </div>
+    `).join('');
+    document.getElementById('gainers-list').innerHTML = (d.gainers || []).map(s => `
+      <div class="kv" style="cursor:pointer;" onclick="openStock('${s.sym}')"><span>${s.name}</span><strong class="up">+${s.pct}%</strong></div>
+    `).join('');
+    document.getElementById('losers-list').innerHTML = (d.losers || []).map(s => `
+      <div class="kv" style="cursor:pointer;" onclick="openStock('${s.sym}')"><span>${s.name}</span><strong class="dn">${s.pct}%</strong></div>
+    `).join('');
+  });
+}
+loadMarketHome();
 
 function liveSearch() {
   const val = document.getElementById('q').value.trim();
   const dd = document.getElementById('dd');
-  if (!val) {
-    dd.innerHTML = POPULAR.slice(0,6).map(x => `<div class="dd-item" onclick="selectStock('${x.sym}','${x.name}')"><div><strong>${x.name}</strong><div class="sub">${x.sector}</div></div><span class="up" style="font-weight:700;">${x.sym.replace('.NS','')}</span></div>`).join('');
-    dd.style.display = 'block';
-    return;
-  }
   clearTimeout(searchTimer);
   searchTimer = setTimeout(async () => {
     const res = await fetch('/search?q=' + encodeURIComponent(val));
     const matches = await res.json();
     if (!matches.length) { dd.style.display = 'none'; return; }
-    dd.innerHTML = matches.map(x => `<div class="dd-item" onclick="selectStock('${x.sym}','${x.name.replace(/'/g,"")}')"><div><strong>${x.name}</strong><div class="sub">${x.sector}</div></div><span class="up" style="font-weight:700;">${x.sym.replace('.NS','')}</span></div>`).join('');
+    dd.innerHTML = matches.map(x => `
+      <div class="dd-item" onclick="selectStock('${x.sym}','${x.name.replace(/'/g,"")}')">
+        <div><strong>${x.name}</strong><span class="ex-tag ${x.exch==='BSE'?'ex-bse':'ex-nse'}">${x.exch}</span><div class="sub">${x.sector}</div></div>
+        <span class="up" style="font-weight:700; font-size:0.78rem;">${x.sym}</span>
+      </div>
+    `).join('');
     dd.style.display = 'block';
-  }, 180);
+  }, 160);
 }
-function selectStock(sym, name) { document.getElementById('q').value = name; document.getElementById('dd').style.display='none'; loadStock(sym); }
+function selectStock(sym, name) { document.getElementById('q').value = name; document.getElementById('dd').style.display='none'; openStock(sym); }
 document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) document.getElementById('dd').style.display='none'; });
 
+function backToHome() {
+  currentSym = "";
+  clearInterval(liveTimer);
+  document.getElementById('detail-view').style.display = 'none';
+  document.getElementById('home-view').style.display = 'block';
+  saveState();
+}
+
+function switchSub(s, el) {
+  ["ov","ai","nw"].forEach(x => document.getElementById("sub-"+x).style.display = (x===s?"block":"none"));
+  document.querySelectorAll(".stab").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+}
 function setTF(p, btn) {
   document.querySelectorAll('.tf').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   currentPeriod = p;
-  loadStock(currentSym);
+  saveState();
+  fetchStockData(currentSym, false);
 }
 function toggleChartMode() {
   chartMode = (chartMode === "line") ? "candle" : "line";
@@ -344,28 +488,55 @@ function toggleChartMode() {
   drawChart(-1);
 }
 
-async function loadStock(sym) {
+function openStock(sym, persist = true) {
   if (!sym) return;
-  document.getElementById('dd').style.display='none';
+  document.getElementById('dd').style.display = 'none';
+  switchTab('explore', false);
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('detail-view').style.display = 'block';
   currentSym = sym;
-  document.getElementById('loader').style.display='block';
-  document.getElementById('stock-body').style.display='none';
+  if (persist) saveState();
+  fetchStockData(sym, false);
+  clearInterval(liveTimer);
+  liveTimer = setInterval(() => {
+    if (currentSym && currentTab === "explore") fetchStockData(currentSym, true);
+  }, 10000);
+}
 
-  const t0 = performance.now();
-  const res = await fetch(`/analyze?ticker=${encodeURIComponent(sym)}&period=${currentPeriod}`);
+async function fetchStockData(sym, silent) {
+  if (!silent) {
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('stock-body').style.display = 'none';
+  }
+  const res = await fetch(`/analyze?ticker=${encodeURIComponent(sym)}&period=${currentPeriod}&live=${silent?1:0}`);
   const d = await res.json();
-  const clientMs = Math.round(performance.now() - t0);
-  document.getElementById('loader').style.display='none';
-  if (!res.ok) { alert(d.detail || "Stock not found"); return; }
+  if (!silent) document.getElementById('loader').style.display = 'none';
+  if (!res.ok) { if (!silent) alert(d.detail || "Stock not found"); return; }
 
+  lastStockData = d;
   currentSym = d.ticker;
+  saveState();
+
   document.getElementById('s-name').innerText = d.company_name;
-  document.getElementById('s-sym').innerText = `${d.ticker} • NSE`;
-  document.getElementById('lat-pill').innerText = `⚡ ${clientMs}ms`;
+  document.getElementById('s-sym').innerText = `${d.ticker} • ${d.exchange}`;
   document.getElementById('s-price').innerText = `₹${d.price.toLocaleString('en-IN')}`;
   const up = d.day_chg >= 0;
   document.getElementById('s-chg').innerHTML = `<span class="${up?'up':'dn'}">${up?'+':''}₹${d.day_chg} (${up?'+':''}${d.day_pct}%) Today</span>`;
   document.getElementById('w-btn').innerText = watchlist.includes(d.ticker) ? "✓ Saved" : "+ Watch";
+
+  const exBox = document.getElementById('exch-switch');
+  if (d.ticker.endsWith(".NS") || d.ticker.endsWith(".BO")) {
+    const alt = d.ticker.endsWith(".NS") ? d.ticker.replace(".NS",".BO") : d.ticker.replace(".BO",".NS");
+    const altLbl = d.ticker.endsWith(".NS") ? "Switch BSE" : "Switch NSE";
+    const gapTxt = d.peer_price ? ` (₹${d.peer_price})` : "";
+    exBox.innerHTML = `<button onclick="openStock('${alt}')" style="background:var(--card2); border:1px solid var(--border); color:var(--blue); font-size:0.68rem; padding:3px 7px; border-radius:6px; font-weight:700; cursor:pointer;">${altLbl}${gapTxt}</button>`;
+  } else { exBox.innerHTML = ""; }
+
+  if (alerts[d.ticker] && d.price >= alerts[d.ticker]) {
+    showToast(`🔔 TARGET HIT: ${d.company_name} crossed ₹${alerts[d.ticker]} (Now ₹${d.price})!`);
+    delete alerts[d.ticker];
+    localStorage.setItem("np_alerts", JSON.stringify(alerts));
+  }
 
   document.getElementById('t-low').innerText = `₹${d.day_low}`;
   document.getElementById('t-high').innerText = `₹${d.day_high}`;
@@ -400,19 +571,72 @@ async function loadStock(sym) {
   document.getElementById('ai-rsi').innerText = `${d.rsi} (${d.rsi_zone})`;
   document.getElementById('ai-macd').innerText = d.macd_signal;
 
-  document.getElementById('sh-prom').innerText = d.shareholding.promoters + "%";
-  document.getElementById('b-prom').style.width = d.shareholding.promoters + "%";
-  document.getElementById('sh-fii').innerText = d.shareholding.fii + "%";
-  document.getElementById('b-fii').style.width = d.shareholding.fii + "%";
-  document.getElementById('sh-dii').innerText = d.shareholding.dii + "%";
-  document.getElementById('b-dii').style.width = d.shareholding.dii + "%";
-  document.getElementById('sh-pub').innerText = d.shareholding.public + "%";
-  document.getElementById('b-pub').style.width = d.shareholding.public + "%";
+  calcPosition();
+  calcSip();
+
+  const ov = document.getElementById('news-overall');
+  ov.innerText = d.news.overall;
+  ov.style.background = d.news.overall === "POSITIVE" ? "rgba(0,208,156,0.18)" : "rgba(56,189,248,0.18)";
+  ov.style.color = d.news.overall === "POSITIVE" ? "var(--green)" : "var(--blue)";
+    document.getElementById('news-list').innerHTML = (d.news.news || []).length ? d.news.news.map(n => `
+    <div class="kv" style="flex-direction:column; gap:4px; padding:10px 0;">
+      <div style="font-weight:600; font-size:0.82rem;">${n.title}</div>
+      <div style="display:flex; justify-content:space-between;">
+        <span class="sub">${n.publisher}</span>
+        <span class="${n.sentiment==='BULLISH'?'up':(n.sentiment==='BEARISH'?'dn':'sub')}" style="font-size:0.7rem; font-weight:700;">${n.sentiment}</span>
+      </div>
+    </div>
+  `).join('') : '<div class="sub">No breaking news headlines right now.</div>';
 
   chartData = d.history;
-  viewStart = 0; viewEnd = chartData.length;
-  document.getElementById('stock-body').style.display='block';
+  if (!silent) { viewStart = 0; viewEnd = chartData.length; }
+  else { viewEnd = chartData.length; }
+  document.getElementById('stock-body').style.display = 'block';
   drawChart(-1);
+}
+
+function calcPosition() {
+  if (!lastStockData) return;
+  const cap = parseFloat(document.getElementById('cap-inp').value) || 10000;
+  const qty = Math.max(1, Math.floor(cap / lastStockData.price));
+  const risk = ((lastStockData.price - lastStockData.support) * qty).toFixed(0);
+  const reward = ((lastStockData.resistance - lastStockData.price) * qty).toFixed(0);
+  const rr = (reward / Math.max(1, risk)).toFixed(1);
+  document.getElementById('pos-out').innerHTML = `Buy <strong>${qty} Shares</strong> @ ₹${lastStockData.price} • Max Risk: <span class="dn">₹${risk}</span> • Target Profit: <span class="up">₹${reward}</span> (<strong>1:${rr} R:R</strong>)`;
+}
+
+function calcSip() {
+  if (!lastStockData) return;
+  const m = parseFloat(document.getElementById('sip-inp').value) || 5000;
+  const r = (lastStockData.cagr_est / 100) / 12;
+  const n = 36;
+  const fv = Math.round(m * (((Math.pow(1 + r, n) - 1) / r) * (1 + r)));
+  const inv = m * n;
+  document.getElementById('sip-out').innerHTML = `Total Invested: <strong>₹${inv.toLocaleString('en-IN')}</strong> → Est. Value (@ ${lastStockData.cagr_est}% CAGR): <strong class="up">₹${fv.toLocaleString('en-IN')}</strong>`;
+}
+
+function setTargetAlert() {
+  if (!lastStockData) return;
+  const t = prompt(`Set Target Price Alert for ${lastStockData.company_name} (Current: ₹${lastStockData.price}):`, Math.round(lastStockData.price * 1.03));
+  if (t && !isNaN(parseFloat(t))) {
+    alerts[lastStockData.ticker] = parseFloat(t);
+    localStorage.setItem("np_alerts", JSON.stringify(alerts));
+    showToast(`🔔 Alert saved for ${lastStockData.ticker} at ₹${t}`);
+  }
+}
+
+function shareQuantCard() {
+  if (!lastStockData) return;
+  const txt = `⚡ NiftyPulse AI Report: ${lastStockData.company_name} (${lastStockData.ticker})\nPrice: ₹${lastStockData.price} (${lastStockData.day_pct}%)\nAI Signal: ${lastStockData.ml_signal} (${lastStockData.prob_up}%)\nSupport: ₹${lastStockData.support} | Target: ₹${lastStockData.resistance}\nRSI: ${lastStockData.rsi} (${lastStockData.rsi_zone})`;
+  if (navigator.clipboard) navigator.clipboard.writeText(txt);
+  showToast("📋 AI Quant Report Card copied to clipboard!");
+}
+
+function showToast(msg) {
+  const el = document.getElementById('alert-toast');
+  el.innerText = msg;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
 }
 
 function zoomChart(factor) {
@@ -496,15 +720,31 @@ wrap.addEventListener('touchmove', e => {
   } else if (e.touches.length === 1) inspectAt(e.touches[0].clientX);
 });
 wrap.addEventListener('mousemove', e => inspectAt(e.clientX));
-wrap.addEventListener('wheel', e => { e.preventDefault(); zoomChart(e.deltaY < 0 ? 0.85 : 1.18); });
-wrap.addEventListener('touchend', () => { pinchDist = 0; document.getElementById('xhair').innerText = "Pinch or use +/- to zoom • Drag to inspect"; drawChart(-1); });
-
+wrap.addEventListener('touchend', () => { pinchDist = 0; document.getElementById('xhair').innerText = "Pinch or +/- to zoom • Drag to inspect"; drawChart(-1); });
 function inspectAt(clientX) {
   const sliceLen = viewEnd - viewStart;
   if (!sliceLen) return;
   const rect = wrap.getBoundingClientRect();
-  const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-  drawChart(Math.round(ratio * (sliceLen - 1)));
+  drawChart(Math.round(Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) * (sliceLen - 1)));
+}
+
+async function runCompare() {
+  const a = document.getElementById('cmp-a').value.trim();
+  const b = document.getElementById('cmp-b').value.trim();
+  const box = document.getElementById('cmp-res');
+  box.innerHTML = '<div class="sub">Running AI Battle...</div>';
+  const [ra, rb] = await Promise.all([fetch(`/analyze?ticker=${encodeURIComponent(a)}`), fetch(`/analyze?ticker=${encodeURIComponent(b)}`)]);
+  if (!ra.ok || !rb.ok) { box.innerHTML = '<div class="dn">Invalid ticker symbol.</div>'; return; }
+  const [da, db] = await Promise.all([ra.json(), rb.json()]);
+  const winner = da.prob_up >= db.prob_up ? da.company_name : db.company_name;
+  box.innerHTML = `
+    <div style="background:rgba(0,208,156,0.12); border:1px solid var(--green); padding:10px; border-radius:10px; text-align:center; font-weight:700; margin-bottom:10px;" class="up">🏆 AI Pick: ${winner}</div>
+    <div class="kv"><span>Metric</span><strong>${da.ticker.replace('.NS','')} vs ${db.ticker.replace('.NS','')}</strong></div>
+    <div class="kv"><span>Live Price</span><strong>₹${da.price} vs ₹${db.price}</strong></div>
+    <div class="kv"><span>AI UP Chance</span><strong class="up">${da.prob_up}% vs ${db.prob_up}%</strong></div>
+    <div class="kv"><span>14-Day RSI</span><strong>${da.rsi} vs ${db.rsi}</strong></div>
+    <div class="kv"><span>P/E Ratio</span><strong>${da.fundamentals.pe} vs ${db.fundamentals.pe}</strong></div>
+  `;
 }
 
 function toggleWatch() {
@@ -516,27 +756,36 @@ function toggleWatch() {
 async function renderWatchlist() {
   document.getElementById('wl-count').innerText = `${watchlist.length} Stocks`;
   const box = document.getElementById('wl-list');
-  box.innerHTML = '<div class="sub" style="padding:16px;text-align:center;">Syncing Watchlist...</div>';
+  box.innerHTML = '<div class="sub" style="padding:14px;text-align:center;">Syncing Watchlist...</div>';
   const res = await fetch('/watchlist?syms=' + encodeURIComponent(watchlist.join(',')));
   const items = await res.json();
   box.innerHTML = items.map(x => `
-    <div class="kv" style="padding:11px 0; cursor:pointer;" onclick="switchTab('analyzer', document.querySelectorAll('.bitem')[0]); loadStock('${x.sym}');">
-      <div><strong>${x.sym.replace('.NS','')}</strong><div class="sub">NSE</div></div>
+    <div class="kv" style="padding:11px 0; cursor:pointer;" onclick="openStock('${x.sym}')">
+      <div><strong>${x.sym}</strong><div class="sub">${x.sym.endsWith('.BO')?'BSE':'NSE'}</div></div>
       <div style="text-align:right;"><strong>₹${x.price}</strong><div class="${x.chg>=0?'up':'dn'}" style="font-size:0.76rem;">${x.chg>=0?'+':''}${x.pct}%</div></div>
     </div>
   `).join('');
 }
+
 async function loadMlops() {
   const res = await fetch('/mlops-metrics');
   const m = await res.json();
   document.getElementById('m-ens').innerText = m.model_metrics.ensemble_acc + "%";
-  document.getElementById('m-hits').innerText = m.live_telemetry.cache_hits + " Hits";
-  document.getElementById('m-reqs').innerText = m.live_telemetry.requests;
+  document.getElementById('m-drift').innerText = m.live_telemetry.drift_status;
+  document.getElementById('m-reqs').innerText = `${m.live_telemetry.cache_hits} / ${m.live_telemetry.requests}`;
   document.getElementById('m-lat').innerText = m.live_telemetry.avg_ms + " ms";
-  document.getElementById('fi-bars').innerHTML = Object.entries(m.feature_importance).map(([k,v]) => `
-    <div class="bar-row"><div class="bar-top"><span>${k}</span><strong>${v}%</strong></div><div class="bar-bg"><div class="bar-fill" style="width:${Math.min(100,v*2.5)}%; background:var(--blue);"></div></div></div>
-  `).join('');
 }
+async function runWhatIf() {
+  const r1 = document.getElementById('w-r1').value;
+  const vr = document.getElementById('w-vr').value;
+  document.getElementById('w-r1-v').innerText = (r1>=0?'+':'') + r1 + "%";
+  document.getElementById('w-vr-v').innerText = vr + "x";
+  const res = await fetch(`/simulate?ret1=${r1}&vol_ratio=${vr}`, {method:'POST'});
+  const d = await res.json();
+  document.getElementById('whatif-out').innerHTML = `Simulated AI Signal: <span class="${d.prob_up>=52?'up':'dn'}">${d.signal} (${d.prob_up}%)</span>`;
+}
+
+restoreState();
 </script>
 </body>
 </html>
