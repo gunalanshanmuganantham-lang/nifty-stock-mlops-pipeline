@@ -104,7 +104,7 @@ def fast_quote(ticker: str):
     }
     CACHE[ck] = {"ts": time.time(), "data": out}
     return out
-    @app.get("/search")
+@app.get("/search")
 def search_stocks(q: str = ""):
     q_clean = q.strip()
     defaults = [
