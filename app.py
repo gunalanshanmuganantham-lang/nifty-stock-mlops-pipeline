@@ -211,3 +211,4 @@ def analyze_stock(ticker: str = "CUPID.NS", period: str = "1y"):
     telemetry["requests"] = n + 1
     telemetry["last_ticker"] = q
     return result
+            
