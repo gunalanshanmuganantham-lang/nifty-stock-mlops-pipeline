@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -7,14 +7,13 @@ import joblib
 import requests
 import time
 
-app = FastAPI(title="NiftyPulse AI v5.0 — Pro Quant & MLOps Terminal", version="5.0.0")
+app = FastAPI(title="NiftyPulse AI v5.0", version="5.0.0")
 bundle = joblib.load("stock_model.pkl")
 model = bundle["model"]
 
-telemetry = {"requests": 0, "avg_ms": 0.0, "cache_hits": 0, "last_ticker": "HDFCBANK.NS"}
+telemetry = {"requests": 0, "avg_ms": 0.0, "cache_hits": 0, "last_ticker": "CUPID.NS"}
 CACHE = {}
-CACHE_TTL = 300  # 5 mins ultra-fast memory cache
-
+CACHE_TTL = 300
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
 
 POPULAR_NSE = [
@@ -34,278 +33,181 @@ POPULAR_NSE = [
     {"sym": "CDSL.NS", "name": "Central Depository Services", "sector": "Capital Markets"}
 ]
 
-HTML_UI = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>NiftyPulse AI v5.0 | Quant & MLOps Terminal</title>
-<style>
-  :root { --bg:#090c12; --card:#121722; --card2:#192130; --border:#222d40; --green:#00d09c; --red:#eb5b3c; --text:#f8fafc; --muted:#8b9bb4; --blue:#38bdf8; --gold:#f59e0b; }
-  * { box-sizing:border-box; font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif; -webkit-tap-highlight-color:transparent; }
-  body { background:var(--bg); color:var(--text); margin:0; padding:0 0 78px; display:flex; justify-content:center; }
-  .shell { max-width:480px; width:100%; padding:10px 12px; }
+@app.get("/")
+def home():
+    return FileResponse("index.html")
 
-  /* Lock Screen */
-  #lock-screen { position:fixed; inset:0; background:#070a0f; z-index:999; display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px; }
-  .pin-dots { display:flex; gap:14px; margin:18px 0; }
-  .dot { width:13px; height:13px; border-radius:50%; border:2px solid var(--green); }
-  .dot.filled { background:var(--green); }
-  .keypad { display:grid; grid-template-columns:repeat(3,70px); gap:14px; margin-top:8px; }
-  .key { height:58px; border-radius:50%; background:var(--card); border:1px solid var(--border); color:#fff; font-size:1.25rem; font-weight:700; cursor:pointer; }
-  .key:active { background:var(--green); color:#000; }
+@app.get("/popular")
+def get_popular():
+    return POPULAR_NSE
 
-  /* Multi-Index Horizontal Ticker Strip */
-  .idx-strip { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none; }
-  .idx-strip::-webkit-scrollbar { display:none; }
-  .idx-pill { background:var(--card); border:1px solid var(--border); border-radius:11px; padding:7px 11px; min-width:128px; flex-shrink:0; cursor:pointer; }
-  .idx-pill:hover { border-color:var(--green); }
-  .idx-name { font-size:0.68rem; color:var(--muted); font-weight:700; letter-spacing:0.3px; }
-  .idx-num { font-size:0.84rem; font-weight:800; margin-top:2px; }
-  .idx-chg { font-size:0.7rem; font-weight:600; margin-top:1px; }
+@app.get("/search")
+def search_nse(q: str):
+    q_clean = q.strip()
+    if not q_clean:
+        return POPULAR_NSE[:6]
+    results = []
+    try:
+        url = f"https://query2.finance.yahoo.com/v1/finance/search?q={q_clean}&quotesCount=10&newsCount=0"
+        r = requests.get(url, headers=HEADERS, timeout=3).json()
+        for item in r.get("quotes", []):
+            sym = item.get("symbol", "")
+            if sym.endswith(".NS") or sym.endswith(".BO") or sym.startswith("^"):
+                results.append({"sym": sym, "name": item.get("shortname") or item.get("longname") or sym, "sector": item.get("sector") or item.get("exchDisp") or "NSE Equity"})
+    except Exception:
+        pass
+    if not results:
+        ql = q_clean.lower()
+        results = [x for x in POPULAR_NSE if ql in x["name"].lower() or ql in x["sym"].lower()]
+    if not results:
+        results = [{"sym": f"{q_clean.upper()}.NS", "name": f"{q_clean.upper()} (NSE Direct)", "sector": "NSE Equity"}]
+    return results[:8]
 
-  /* Universal Live Search */
-  .search-wrap { position:relative; margin-bottom:10px; }
-  .search-box { display:flex; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:3px 6px; align-items:center; }
-  .search-box input { flex:1; background:transparent; border:none; color:#fff; padding:9px; font-size:0.9rem; outline:none; }
-  .btn-go { background:var(--green); color:#042f24; border:none; border-radius:8px; padding:8px 13px; font-weight:700; font-size:0.82rem; cursor:pointer; }
-  .dropdown { position:absolute; top:46px; left:0; right:0; background:#151d2b; border:1px solid var(--border); border-radius:12px; z-index:85; max-height:250px; overflow-y:auto; display:none; box-shadow:0 14px 32px rgba(0,0,0,0.8); }
-  .dd-item { padding:10px 14px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
-  .dd-item:hover { background:#1f2a3d; }
+@app.get("/indices")
+def get_indices():
+    if "indices" in CACHE and time.time() - CACHE["indices"]["ts"] < CACHE_TTL:
+        return CACHE["indices"]["data"]
+    idx_list = [("NIFTY 50", "^NSEI"), ("NIFTY NEXT 50", "^NSMIDCP"), ("BANK NIFTY", "^NSEBANK"), ("NIFTY IT", "^CNXIT"), ("NIFTY MIDCAP", "^NSEMDCP50"), ("INDIA VIX", "^INDIAVIX")]
+    out = []
+    try:
+        df_all = yf.download([s for _, s in idx_list], period="5d", interval="1d", group_by="ticker", progress=False)
+        for name, sym in idx_list:
+            try:
+                sub = df_all[sym].dropna()
+                c, p = round(float(sub["Close"].iloc[-1]), 2), round(float(sub["Close"].iloc[-2]), 2)
+                chg = round(c - p, 2)
+                out.append({"name": name, "sym": sym, "price": f"{c:,.2f}", "chg": chg, "pct": round((chg/p)*100, 2)})
+            except Exception:
+                continue
+    except Exception:
+        pass
+    if out:
+        CACHE["indices"] = {"ts": time.time(), "data": out}
+    return out
 
-  /* Cards & Layout */
-  .card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:15px; margin-bottom:11px; }
-  .hdr-row { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .title { font-size:1.12rem; font-weight:700; }
-  .sub { font-size:0.74rem; color:var(--muted); margin-top:2px; }
-  .price-big { font-size:1.68rem; font-weight:800; margin:6px 0 2px; }
-  .up { color:var(--green); } .dn { color:var(--red); }
+@app.get("/watchlist")
+def get_watchlist(syms: str):
+    sym_list = [x.strip() for x in syms.split(",") if x.strip()]
+    if not sym_list:
+        return []
+    res = []
+    try:
+        df_all = yf.download(sym_list, period="5d", interval="1d", group_by="ticker", progress=False)
+        for s in sym_list:
+            try:
+                sub = df_all[s].dropna() if len(sym_list) > 1 else df_all.dropna()
+                c, p = round(float(sub["Close"].iloc[-1]), 2), round(float(sub["Close"].iloc[-2]), 2)
+                chg = round(c - p, 2)
+                res.append({"sym": s, "price": c, "chg": chg, "pct": round((chg/p)*100, 2)})
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return res
 
-  /* Zoomable Chart */
-  .chart-top { display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:6px; }
-  .crosshair-info { font-size:0.74rem; color:var(--blue); font-weight:600; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .zoom-btns { display:flex; gap:4px; }
-  .zbtn { background:var(--card2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:3px 8px; font-size:0.74rem; font-weight:700; cursor:pointer; }
-  .zbtn:active { background:var(--green); color:#000; }
-  #chart-wrap { position:relative; width:100%; height:195px; touch-action:none; margin:6px 0 8px; cursor:crosshair; }
-  canvas { width:100%; height:100%; display:block; }
-  .tf-bar { display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:4px; border-radius:10px; }
-  .tf-btns { display:flex; gap:1px; flex:1; justify-content:space-around; }
-  .tf { background:transparent; border:none; color:var(--muted); font-size:0.72rem; font-weight:700; padding:6px 7px; border-radius:7px; cursor:pointer; }
-  .tf.active { background:var(--card2); color:var(--green); }
-  .mode-btn { background:var(--card2); border:1px solid var(--border); color:var(--green); border-radius:7px; padding:5px 8px; font-size:0.72rem; font-weight:700; cursor:pointer; margin-left:4px; }
+@app.get("/mlops-metrics")
+def mlops_metrics():
+    return {"model_metrics": bundle["metrics"], "feature_importance": bundle["feature_importance"], "live_telemetry": telemetry}
 
-  /* Sliders & Grids */
-  .slider-block { margin:11px 0; }
-  .sl-labels { display:flex; justify-content:space-between; font-size:0.74rem; color:var(--muted); margin-bottom:3px; }
-  .sl-vals { display:flex; justify-content:space-between; font-size:0.84rem; font-weight:700; margin-bottom:6px; }
-  .track { position:relative; height:5px; background:#263145; border-radius:4px; }
-  .pointer { position:absolute; top:-4px; width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-bottom:8px solid var(--text); transform:translateX(-6px); }
-  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .kv { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:0.81rem; }
-  .kv:last-child { border-bottom:none; }
-  .bar-row { margin:9px 0; }
-  .bar-top { display:flex; justify-content:space-between; font-size:0.79rem; margin-bottom:4px; }
-  .bar-bg { height:7px; background:#222b3c; border-radius:5px; overflow:hidden; }
-  .bar-fill { height:100%; border-radius:5px; }
+def fetch_fundamentals_reliable(ticker_sym: str, price: float):
+    mcap_str, pe_str, pb_str, roe_str, eps_str, div_str = "N/A", "N/A", "N/A", "N/A", "N/A", "0.00%"
+    comp_name = ticker_sym.replace(".NS", "")
+    try:
+        mc = yf.Ticker(ticker_sym).fast_info.get("marketCap")
+        if mc and mc > 0:
+            mcap_str = f"₹{round(mc / 1e7):,} Cr"
+    except Exception:
+        pass
+    try:
+        url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={ticker_sym}"
+        qres = requests.get(url, headers=HEADERS, timeout=3).json().get("quoteResponse", {}).get("result", [])
+        if qres:
+            q = qres[0]
+            comp_name = q.get("shortName") or q.get("longName") or comp_name
+            if q.get("marketCap"):
+                mcap_str = f"₹{round(q['marketCap'] / 1e7):,} Cr"
+            if q.get("trailingPE"):
+                pe_str = str(round(float(q["trailingPE"]), 2))
+            if q.get("priceToBook"):
+                pb_str = str(round(float(q["priceToBook"]), 2))
+            if q.get("epsTrailingTwelveMonths"):
+                eps_val = float(q["epsTrailingTwelveMonths"])
+                eps_str = f"₹{round(eps_val, 2)}"
+                if pb_str != "N/A" and float(pb_str) > 0:
+                    roe_str = f"{round((eps_val / (price / float(pb_str))) * 100, 2)}%"
+            if q.get("dividendYield"):
+                div_str = f"{round(float(q['dividendYield']), 2)}%"
+    except Exception:
+        pass
+    return comp_name, {"mkt_cap": mcap_str, "pe": pe_str, "pb": pb_str, "roe": roe_str, "eps": eps_str, "div_yield": div_str}, {"promoters": 52.0, "fii": 12.5, "dii": 14.5, "public": 21.0}
 
-  /* Sub-tabs & Bottom Nav */
-  .sub-tabs { display:flex; border-bottom:1px solid var(--border); margin-bottom:11px; gap:16px; }
-  .stab { padding:8px 2px; font-size:0.84rem; font-weight:700; color:var(--muted); border-bottom:2px solid transparent; cursor:pointer; }
-  .stab.active { color:var(--text); border-bottom-color:var(--green); }
-  .bnav { position:fixed; bottom:0; left:0; right:0; background:#10151f; border-top:1px solid var(--border); display:flex; justify-content:space-around; padding:8px 0 10px; z-index:90; }
-  .bitem { background:none; border:none; color:var(--muted); font-size:0.71rem; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
-  .bitem.active { color:var(--green); }
-  .bicon { font-size:1.12rem; }
+@app.get("/analyze")
+def analyze_stock(ticker: str = "CUPID.NS", period: str = "1y"):
+    t0 = time.time()
+    q = ticker.strip().upper()
+    if not q.startswith("^") and not q.endswith(".NS") and not q.endswith(".BO"):
+        q = f"{q}.NS"
+    cache_key = f"{q}_{period}"
+    if cache_key in CACHE and (time.time() - CACHE[cache_key]["ts"]) < CACHE_TTL:
+        telemetry["cache_hits"] += 1
+        ms = round((time.time() - t0) * 1000, 1)
+        n = telemetry["requests"]
+        telemetry["avg_ms"] = round(((telemetry["avg_ms"] * n) + ms) / (n + 1), 1)
+        telemetry["requests"] = n + 1
+        return CACHE[cache_key]["data"]
 
-  /* Switch */
-  .switch { position:relative; display:inline-block; width:46px; height:24px; }
-  .switch input { opacity:0; width:0; height:0; }
-  .slider-tog { position:absolute; cursor:pointer; inset:0; background:#334155; border-radius:24px; transition:.3s; }
-  .slider-tog:before { position:absolute; content:""; height:18px; width:18px; left:3px; bottom:3px; background:white; border-radius:50%; transition:.3s; }
-  input:checked + .slider-tog { background:var(--green); }
-  input:checked + .slider-tog:before { transform:translateX(22px); }
-</style>
-</head>
-<body>
+    valid = {"1wk": "1mo", "1mo": "3mo", "3mo": "3mo", "6mo": "6mo", "1y": "1y", "5y": "5y", "max": "max"}
+    df = yf.download(q, period=valid.get(period, "1y"), interval="1d", progress=False)
+    if df.empty or len(df) < 10:
+        raise HTTPException(status_code=404, detail=f"Stock '{q}' not found on NSE.")
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
 
-<!-- APP LOCK SCREEN -->
-<div id="lock-screen">
-  <div style="font-size:2rem;">🔒</div>
-  <div style="font-weight:700; font-size:1.1rem; margin-top:8px;">NiftyPulse AI Locked</div>
-  <div style="font-size:0.8rem; color:var(--muted); margin-top:4px;" id="lock-msg">Enter 4-Digit Security PIN</div>
-  <div class="pin-dots"><div class="dot" id="d0"></div><div class="dot" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div></div>
-  <div class="keypad">
-    <button class="key" onclick="pressPin('1')">1</button><button class="key" onclick="pressPin('2')">2</button><button class="key" onclick="pressPin('3')">3</button>
-    <button class="key" onclick="pressPin('4')">4</button><button class="key" onclick="pressPin('5')">5</button><button class="key" onclick="pressPin('6')">6</button>
-    <button class="key" onclick="pressPin('7')">7</button><button class="key" onclick="pressPin('8')">8</button><button class="key" onclick="pressPin('9')">9</button>
-    <button class="key" style="font-size:0.85rem;" onclick="clearPin()">CLR</button><button class="key" onclick="pressPin('0')">0</button><button class="key" style="font-size:0.9rem;" onclick="bioUnlock()">👆</button>
-  </div>
-</div>
+    df["Ret_1d"] = df["Close"].pct_change()
+    df["Ret_5d"] = df["Close"].pct_change(5)
+    df["SMA_20"] = df["Close"].rolling(20).mean().bfill()
+    df["SMA_Ratio"] = df["Close"] / df["SMA_20"]
+    df["EMA_12"] = df["Close"].ewm(span=12).mean()
+    df["EMA_26"] = df["Close"].ewm(span=26).mean()
+    df["EMA_Ratio"] = df["Close"] / df["EMA_12"]
+    df["MACD"] = df["EMA_12"] - df["EMA_26"]
+    df["Vol_10d"] = df["Ret_1d"].rolling(10).std().bfill()
+    df["Range_Pct"] = (df["High"] - df["Low"]) / df["Close"]
+    df["Vol_Ratio"] = (df["Volume"] / df["Volume"].rolling(10).mean()).fillna(1.0)
+    delta = df["Close"].diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    df["RSI"] = (100 - (100 / (1 + (gain / loss.replace(0, np.nan))))).fillna(50.0)
 
-<div class="shell">
-  <!-- LIVE MULTI-INDEX STRIP (NIFTY 50, NEXT 50, BANK NIFTY, IT, MIDCAP, VIX) -->
-  <div class="idx-strip" id="idx-strip">
-    <div class="idx-pill"><div class="idx-name">SYNCING INDICES...</div><div class="idx-num">NSE Live</div></div>
-  </div>
+    latest, prev = df.iloc[-1], df.iloc[-2]
+    X_live = np.nan_to_num(np.array([[latest["Ret_1d"], latest["Ret_5d"], latest["SMA_Ratio"], latest["EMA_Ratio"], latest["Vol_10d"], latest["Range_Pct"], latest["Vol_Ratio"]]]), nan=0.0)
+    prob_up = round(float(model.predict_proba(X_live)[0][1]) * 100, 1)
+    signal = "BULLISH (UP)" if prob_up >= 52 else "BEARISH / SIDEWAYS"
 
-  <!-- TAB 1: ANALYZER -->
-  <div id="tab-analyzer">
-    <div class="search-wrap">
-      <div class="search-box">
-        <input type="text" id="q" placeholder="Search ANY NSE stock (MRF, BEL, Trent, Cupid...)" oninput="liveSearch()" onfocus="liveSearch()">
-        <button class="btn-go" onclick="loadStock(document.getElementById('q').value)">Go</button>
-      </div>
-      <div class="dropdown" id="dd"></div>
-    </div>
+    price, prev_c = round(float(latest["Close"]), 2), round(float(prev["Close"]), 2)
+    day_chg = round(price - prev_c, 2)
+    day_pct = round((day_chg / prev_c) * 100, 2)
+    move = round(price * float(latest["Vol_10d"]), 2)
+    rsi_v = round(float(latest["RSI"]), 1)
+    comp_name, funds, sh = fetch_fundamentals_reliable(q, price)
 
-    <div id="loader" style="text-align:center; padding:26px; color:var(--green); font-size:0.88rem; display:none;">⚡ Fetching NSE Data & Quant Signals...</div>
+    slice_df = df.tail(7) if period == "1wk" else (df.tail(22) if period == "1mo" else df)
+    hist = [{"d": str(idx.date()), "o": round(float(r["Open"]),2), "h": round(float(r["High"]),2), "l": round(float(r["Low"]),2), "c": round(float(r["Close"]),2)} for idx, r in slice_df.iterrows()]
 
-    <div id="stock-body" style="display:none;">
-      <div class="card">
-        <div class="hdr-row">
-          <div>
-            <div class="title" id="s-name"></div>
-            <div class="sub" id="s-sym"></div>
-          </div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <span id="lat-pill" style="font-size:0.68rem; color:var(--blue); background:rgba(56,189,248,0.12); padding:4px 7px; border-radius:6px; font-weight:700;"></span>
-            <button onclick="toggleWatch()" id="w-btn" style="background:var(--card2); border:1px solid var(--border); color:var(--green); padding:6px 10px; border-radius:8px; font-size:0.75rem; font-weight:700; cursor:pointer;">+ Watch</button>
-          </div>
-        </div>
-        <div class="price-big" id="s-price"></div>
-        <div style="font-size:0.83rem; font-weight:600;" id="s-chg"></div>
-
-        <div class="chart-top">
-          <div class="crosshair-info" id="xhair">Pinch or use +/- to zoom • Drag to inspect</div>
-          <div class="zoom-btns">
-            <button class="zbtn" onclick="zoomChart(0.7)">+</button>
-            <button class="zbtn" onclick="zoomChart(1.4)">−</button>
-            <button class="zbtn" onclick="resetZoom()">Reset</button>
-          </div>
-        </div>
-        <div id="chart-wrap"><canvas id="chart"></canvas></div>
-
-        <div class="tf-bar">
-          <div class="tf-btns">
-            <button class="tf" onclick="setTF('1wk',this)">1W</button>
-            <button class="tf" onclick="setTF('1mo',this)">1M</button>
-            <button class="tf" onclick="setTF('3mo',this)">3M</button>
-            <button class="tf" onclick="setTF('6mo',this)">6M</button>
-            <button class="tf active" onclick="setTF('1y',this)">1Y</button>
-            <button class="tf" onclick="setTF('5y',this)">5Y</button>
-            <button class="tf" onclick="setTF('max',this)">ALL</button>
-          </div>
-          <button class="mode-btn" id="mode-btn" onclick="toggleChartMode()">🕯️ Candle</button>
-        </div>
-      </div>
-
-      <!-- SUB-TABS -->
-      <div class="sub-tabs">
-        <div class="stab active" onclick="switchSub('ov',this)">Overview</div>
-        <div class="stab" onclick="switchSub('ai',this)">AI Quant & Tech</div>
-        <div class="stab" onclick="switchSub('sh',this)">Shareholding</div>
-      </div>
-
-      <!-- SUB 1: OVERVIEW -->
-      <div id="sub-ov">
-        <div class="card">
-          <div style="font-weight:700; font-size:0.94rem; margin-bottom:8px;">Performance</div>
-          <div class="slider-block">
-            <div class="sl-labels"><span>Today's Low</span><span>Today's High</span></div>
-            <div class="sl-vals"><span id="t-low"></span><span id="t-high"></span></div>
-            <div class="track"><div class="pointer" id="t-ptr"></div></div>
-          </div>
-          <div class="slider-block">
-            <div class="sl-labels"><span>52 Week Low</span><span>52 Week High</span></div>
-            <div class="sl-vals"><span id="w-low"></span><span id="w-high"></span></div>
-            <div class="track"><div class="pointer" id="w-ptr"></div></div>
-          </div>
-          <div class="grid2" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">
-            <div class="kv"><span style="color:var(--muted);">Open</span><strong id="f-open"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">Prev. Close</span><strong id="f-prev"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">Volume</span><strong id="f-vol"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">20-DMA</span><strong id="f-sma"></strong></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div style="font-weight:700; font-size:0.94rem; margin-bottom:6px;">Fundamentals</div>
-          <div class="grid2">
-            <div class="kv"><span style="color:var(--muted);">Mkt Cap</span><strong id="fn-cap"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">ROE</span><strong id="fn-roe"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">P/E Ratio</span><strong id="fn-pe"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">EPS (TTM)</span><strong id="fn-eps"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">P/B Ratio</span><strong id="fn-pb"></strong></div>
-            <div class="kv"><span style="color:var(--muted);">Div Yield</span><strong id="fn-div"></strong></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SUB 2: AI QUANT & TECHNICALS -->
-      <div id="sub-ai" style="display:none;">
-        <div class="card" style="border-color:rgba(0,208,156,0.35);">
-          <div class="hdr-row">
-            <div>
-              <div style="font-weight:700; color:var(--blue); font-size:0.95rem;">🤖 Ensemble ML & Technical Setup</div>
-              <div class="sub">RF + GradientBoost + Logistic Voting</div>
-            </div>
-            <span id="ai-badge" style="padding:4px 10px; border-radius:8px; font-weight:700; font-size:0.78rem;"></span>
-          </div>
-          <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-top:12px;">
-            <span style="color:var(--muted);">Next-Day Bullish Probability</span>
-            <strong id="ai-prob"></strong>
-          </div>
-          <div class="bar-bg" style="margin:6px 0 14px;"><div class="bar-fill" id="ai-bar"></div></div>
-
-          <div class="grid2">
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
-              <div class="sub">Stop-Loss (Support)</div><div class="dn" style="font-weight:700; margin-top:3px;" id="ai-sup"></div>
-            </div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
-              <div class="sub">Target (Resistance)</div><div class="up" style="font-weight:700; margin-top:3px;" id="ai-res"></div>
-            </div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
-              <div class="sub">14-Day RSI</div><div style="font-weight:700; margin-top:3px;" id="ai-rsi"></div>
-            </div>
-            <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
-              <div class="sub">MACD Momentum</div><div style="font-weight:700; margin-top:3px;" id="ai-macd"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SUB 3: SHAREHOLDING -->
-      <div id="sub-sh" style="display:none;">
-        <div class="card">
-          <div style="font-weight:700; font-size:0.94rem; margin-bottom:10px;">Shareholding Pattern</div>
-          <div class="bar-row"><div class="bar-top"><span>Promoters</span><strong id="sh-prom"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-prom" style="background:#818cf8;"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>FIIs (Foreign Inst.)</span><strong id="sh-fii"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-fii" style="background:#38bdf8;"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>DIIs (Mutual Funds)</span><strong id="sh-dii"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-dii" style="background:#00d09c;"></div></div></div>
-          <div class="bar-row"><div class="bar-top"><span>Retail & Public</span><strong id="sh-pub"></strong></div><div class="bar-bg"><div class="bar-fill" id="b-pub" style="background:#fb923c;"></div></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- TAB 2: WATCHLIST -->
-  <div id="tab-watchlist" style="display:none;">
-    <div class="card">
-      <div class="hdr-row" style="margin-bottom:10px;">
-        <div class="title">My Watchlist</div>
-        <span class="sub" id="wl-count"></span>
-      </div>
-      <div id="wl-list"></div>
-    </div>
-  </div>
-
-  <!-- TAB 3: MLOPS LAB -->
-  <div id="tab-mlops" style="display:none;">
-    <div class="card" style="border-color:rgba(56,189,248,0.35);">
-      <div class="title" style="color:var(--blue);">⚙️ Production MLOps Engine</div>
-      <div class="sub">Ensemble Model Registry, Cache & Latency Telemetry</div>
-      <div class="grid2" style="margin-top:12px;">
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Ensemble Accuracy</div><div class="up" style="font-weight:800; font-size:1.1rem;" id="m-ens"></div></div>
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--border);"><div class="sub">Cache Hit Speed</div><div class="up" style="font-weight:800; font-size:1.1rem;" id="m-hits"></div></div>
-        <div style="background:var(--bg); padding:10px; border-radius:10px; border:1px solid var(--
+    result = {
+        "ticker": q, "company_name": comp_name, "price": price, "open": round(float(latest["Open"]), 2), "prev_close": prev_c,
+        "day_chg": day_chg, "day_pct": day_pct, "day_low": round(float(latest["Low"]), 2), "day_high": round(float(latest["High"]), 2),
+        "w52_low": round(float(df["Low"].tail(252).min()), 2), "w52_high": round(float(df["High"].tail(252).max()), 2),
+        "volume": int(latest["Volume"]), "sma_20": round(float(latest["SMA_20"]), 2), "prob_up": prob_up, "ml_signal": signal,
+        "support": round(price - move, 2), "resistance": round(price + move, 2), "rsi": rsi_v,
+        "rsi_zone": "Overbought" if rsi_v > 70 else ("Oversold" if rsi_v < 30 else "Neutral"),
+        "macd_signal": "Bullish Crossover" if float(latest["MACD"]) > 0 else "Bearish Momentum",
+        "fundamentals": funds, "shareholding": sh, "history": hist
+    }
+    CACHE[cache_key] = {"ts": time.time(), "data": result}
+    ms = round((time.time() - t0) * 1000, 1)
+    n = telemetry["requests"]
+    telemetry["avg_ms"] = round(((telemetry["avg_ms"] * n) + ms) / (n + 1), 1)
+    telemetry["requests"] = n + 1
+    telemetry["last_ticker"] = q
+    return result
